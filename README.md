@@ -4,7 +4,7 @@
 1. <alt + b 打开百度
 2. <alt + n 打开百度翻译
 3. <alt + g 打开谷歌
-4. <alt + m 打开谷歌翻译
+4. <alt + h 打开谷歌翻译
 5. \>alt + k 以及 >alt + J 切换任务
 6. \>alt + l 以及 >alt + h 切换桌面
 7. <alt + c 打开cmd
