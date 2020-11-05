@@ -58,20 +58,26 @@ VWMess(wParam, lParam, msg, hwnd) {
 For index, value in DesktopNames {
   wn := "#" . index
   wsn := "#+" . index
+  wcn := "#^" . index
   ; MsgBox, %index%aaa
-  Hotkey, %wn%, OnMoveNumberedPress
+  Hotkey, %wn%, OnCurrentWindowMoveNumberedPress
   Hotkey, %wsn%, OnMoveAndSwitchNumberedPress
+  Hotkey, %wcn%, OnMoveNumberedPress
 }
-;             ---重置脚本---
+
+;           ---引入 taskbar---
+;========================================
+#Include, %A_ScriptDir%\taskbar-top.ahk
+; #Include, %A_ScriptDir%\taskbar-right.ahk
+; #Include, %A_ScriptDir%\taskbar-bottom.ahk
+; #Include, %A_ScriptDir%\taskbar-left.ahk
+
+;             ---重启脚本---
 ;========================================
 ^!r::Reload
 
 ;              ---快捷---
 ;========================================
-#Up:: Return
-#Down:: Return
-#Left:: Return
-#Right:: Return
 ; 最小化活动窗口
 <!Esc:: WinMinimize, A
 <!b::Run https://www.baidu.com/
@@ -79,14 +85,13 @@ For index, value in DesktopNames {
 <!g::Run https://www.google.com/
 <!h::Run https://translate.google.cn/
 <!c::Run %ComSpec% /k cd /d `%USERPROFILE`%\Desktop
-; <!c::Run C:\WINDOWS\system32\cmd.exe
-#`::
+<!+c::
   Run *RunAs %ComSpec%, , UseErrorLevel
   return
-; <!`::Run *RunAs C:\WINDOWS\system32\cmd.exe
 !p::Run C:\Windows\System32\Control.exe
-<!Del::Run C:\Windows\System32\Taskmgr.exe
-<!x::Run C:\Windows\System32\Notepad.exe
+!Del::Run C:\Windows\System32\Taskmgr.exe
+!x::Run C:\Windows\System32\Notepad.exe
+
 >!k::ShiftAltTab
 >!j::AltTab
 >!h::
@@ -97,56 +102,50 @@ For index, value in DesktopNames {
   Send ^#{right}
   Send {Ctrl up}
   Return
->!/::
-  Send {F5}
-  Return
+
 ; 				---显示当前所在桌面---
 ;========================================
 #Esc::
   _ShowTooltip(DesktopNames[_GetCurrentDesktopNumber()])
   Return
-;    ---alt+9输出原始圆括号并左键一格---
+;    ---alt+9 | alt+0输出原始圆括号并左键一格---
 ;========================================
 !9::
   Send {Text}()
-  Sleep, 1
   Send {Left}
   Return
-;    ---alt+[输出原始方括号并左键一格---
+!0::
+  Send {Text})
+  Return
+;    ---alt+[ | alt+]输出原始方括号并左键一格---
 ;========================================
 !VKDB::
   Send {Text}[]
-  Sleep, 1
   Send {Left}
   Return
-;    ---alt+[输出原始方括号并左键一格---
-;========================================
 !VKDD::
   Send {Text}]
   Return
-;    						---alt+'/"并左键一格---
+;    						---alt+' | "并左键一格---
 ;========================================================
 !VKDE::
   Send {Text}''
-  Sleep, 1
   Send {Left}
   Return
 !+VKDE::
   Send {Text}""
-  Sleep, 1
   Send {Left}
   Return
-;    						---alt+{/}并左键一格---
+;    						---alt+{ | }并左键一格---
 ;========================================================
 !+VKDB::
   Send {Text}{}
-  Sleep, 1
   Send {Left}
   Return
 !+VKDD::
   Send {Text}}
   Return
-;    							---alt+;/:输出原始;/:---
+;    							---alt+; | :输出原始; | :---
 ;========================================================
 !VKBA::
   Send {Text};
@@ -169,11 +168,6 @@ For index, value in DesktopNames {
 !`::
   Send {Text}``
   Return
-;    							---alt+0输出原始)---
-;========================================================
-!0::
-  Send {Text})
-  Return
 ;    							---alt+1输出原始!---
 ;========================================================
 !1::
@@ -189,7 +183,7 @@ For index, value in DesktopNames {
 !6::
   Send {Text}^
   Return
-;    							---alt+./>输出原始./>---
+;    							---alt+. | >输出原始. | >---
 ;========================================================
 !VKBE::
   Send {Text}.
@@ -197,7 +191,7 @@ For index, value in DesktopNames {
 !+VKBE::
   Send {Text}>
   Return
-;    							---alt+,/<输出原始,/<---
+;    							---alt+, | <输出原始, | <---
 ;========================================================
 !VKBC::
   Send {Text},
@@ -207,7 +201,7 @@ For index, value in DesktopNames {
   Sleep, 1
   Send {Left}
   Return
-;    							---alt+//?输出原始,//?---
+;    							---alt+/ | ?输出原始,/ | ?---
 ;========================================================
 <!VKBF::
   Send {Text}/
@@ -218,7 +212,7 @@ For index, value in DesktopNames {
 ;      		---]d显示当前时间---
 ;========================================
 :*:]d::
-  FormatTime, CurrentDateTime,, yyyy/M/d hh:mm:ss
+  FormatTime, CurrentDateTime,, yyyy-M-d hh:mm:ss
   SendInput %CurrentDateTime%
   Return
 ;      ---鼠标5键打开应用切换模式---
@@ -293,47 +287,6 @@ CapsLock::
     }
     Clipboard := before
     before := ""
-    Return
-#If
-;        ---任务栏滚轮调节音量---
-;       ---鼠标移右下角滚轮锁屏---
-;      ---鼠标移右上角滚轮调节亮度---
-;	 ---任务栏鼠标左/右划键切换虚拟桌面---
-;========================================
-#If _MouseIsOver("ahk_class Shell_TrayWnd")
-  WheelLeft::
-    Send ^#{Left}
-    Return
-  WheelRight::
-    Send ^#{right}
-    Return
-  WheelUp::
-    deviation := 5
-    resW := A_ScreenWidth
-    resH := A_ScreenHeight
-    MouseGetPos, xpos, ypos,
-    If (xpos <= deviation && ypos <= deviation) {
-      _MoveBrightness(5)
-    } Else {
-      Send {Volume_Up}
-    }
-    Return
-  WheelDown::
-    deviation := 5
-    resW := A_ScreenWidth
-    resH := A_ScreenHeight
-    MouseGetPos, xpos, ypos,
-    If (xpos >= (resW - deviation)) {
-      Run rundll32.exe user32.dll`, LockWorkStation
-    } Else If (xpos <= deviation && ypos <= deviation) {
-      _MoveBrightness(-5)
-    } Else {
-      Send {Volume_Down}
-    }
-    Return
-  
-  MButton::
-    Send {Volume_Mute}
     Return
 #If
 ;	 	 ---Chrome/edge 鼠标滚轮切换标签, 滚动左右键关闭标签---
@@ -543,37 +496,42 @@ _ShowTooltip(message := "") {
 
 _GetCurrentWindowID() {
   WinGet, activeHwnd, ID, A
-  WinGet, cloverHund, ID, ahk_class Clover_WidgetWin_0
-  explorerHund := WinActive("ahk_exe explorer.exe")
-  if (explorerHund == activeHwnd) {
-    return cloverHund
+  explorerHwnd := WinActive("ahk_exe explorer.exe")
+  if (explorerHwnd == activeHwnd) {
+    WinGet, externalHwnd, ID, ahk_class CabinetWClass
+    return externalHwnd
   } else {
     return activeHwnd
   }
 }
 
+; 将当前活动窗口移到桌面n
 _MoveCurrentWindowToDesktop(n:=1) {
   activeHwnd := _GetCurrentWindowID()
   DllCall(MoveWindowToDesktopNumberProc, UInt, activeHwnd, UInt, n-1)
 }
 
+; 切换当前桌面为n
 _ChangeDesktop(n) {
   DllCall(GoToDesktopNumberProc, Int, n-1)
 }
 
+; # + n 监听
+OnCurrentWindowMoveNumberedPress() {
+  _MoveCurrentWindowToDesktop(substr(A_ThisHotkey, 0, 1))
+}
+
+; # + ^ + n 监听
 OnMoveNumberedPress() {
-  MoveToDesktop(substr(A_ThisHotkey, 0, 1))
+  _ChangeDesktop(substr(A_ThisHotkey, 0, 1))
 }
 
+; # + + + n 监听
 OnMoveAndSwitchNumberedPress() {
-  MoveAndSwitchToDesktop(substr(A_ThisHotkey, 0, 1))
+  _MoveAndSwitchCurrentWindowToDesktop(substr(A_ThisHotkey, 0, 1))
 }
 
-MoveToDesktop(n:=1) {
-  _MoveCurrentWindowToDesktop(n)
-}
-
-MoveAndSwitchToDesktop(n:=1) {
+_MoveAndSwitchCurrentWindowToDesktop(n:=1) {
   _MoveCurrentWindowToDesktop(n)
   _ChangeDesktop(n)
 }
